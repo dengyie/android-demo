@@ -1,0 +1,8 @@
+{
+  "cli": {"version": ">= 15.0.11","appVersionSource": "local"},
+  "build": {
+    "development": {"developmentClient": true,"distribution": "internal"},
+    "preview": {"android": {"buildType": "apk"},"ios": {"simulator": true}},
+    "production": {"autoIncrement": true}
+  }
+}
