@@ -35,6 +35,13 @@
     "platforms": [
       "ios",
       "android"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0be73f7d-bc46-4874-9e72-49aaa1d56458"
+      }
+    },
+    "owner": "dengyie"
   }
 }
