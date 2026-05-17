@@ -20,7 +20,7 @@ jobs:
           (
             for i in $(seq 1 240); do
               sleep 5
-              found=$(find /tmp/runner -path "*/eas-build-local-nodejs/*/build/android/app/build/outputs/apk/release" -name "*.apk" 2>/dev/null | head -1)
+              found=$(find /tmp/runner -path "*/eas-build-local-nodejs/*/build/android/app/build/outputs/apk/release/*.apk" 2>/dev/null | head -1)
               if [ -n "$found" ]; then
                 cp "$found" ./artifacts/
                 echo "Copied $(basename "$found") to artifacts/"
@@ -54,7 +54,7 @@ jobs:
           (
             for i in $(seq 1 240); do
               sleep 5
-              found=$(find /var/folders -path "*/eas-build-local-nodejs/*/build/ios/build/Build/Products/Release-iphonesimulator" -name "*.app" 2>/dev/null | head -1)
+              found=$(find /var/folders -path "*/eas-build-local-nodejs/*/build/ios/build/Build/Products/Release-iphonesimulator/*.app" 2>/dev/null | head -1)
               if [ -n "$found" ]; then
                 cp -r "$found" ./artifacts/
                 echo "Copied $(basename "$found") to artifacts/"
