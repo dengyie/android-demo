@@ -17,15 +17,10 @@ jobs:
       - run: eas build --local --platform android --profile preview --non-interactive --output=./build-output
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      - run: |
-          mkdir -p ./artifacts
-          find /tmp/runner -name "*.apk" -exec cp {} ./artifacts/ \; 2>/dev/null || true
-          find ./build-output -name "*.apk" -exec cp {} ./artifacts/ \; 2>/dev/null || true
-          ls -la ./artifacts/
       - uses: actions/upload-artifact@v4
         with:
-          name: android-apk
-          path: ./artifacts/*.apk
+          name: android-build
+          path: ./build-output/
   build-ios:
     runs-on: macos-latest
     steps:
@@ -38,12 +33,7 @@ jobs:
       - run: eas build --local --platform ios --profile preview --non-interactive --output=./build-output
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      - run: |
-          mkdir -p ./artifacts
-          find /var/folders -name "*.app" -exec cp -r {} ./artifacts/ \; 2>/dev/null || true
-          find ./build-output -name "*.app" -exec cp -r {} ./artifacts/ \; 2>/dev/null || true
-          ls -la ./artifacts/
       - uses: actions/upload-artifact@v4
         with:
-          name: ios-app
-          path: ./artifacts/*.app
+          name: ios-build
+          path: ./build-output/
