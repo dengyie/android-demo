@@ -14,13 +14,31 @@ jobs:
           node-version: '20'
       - run: npm ci
       - run: npm install -g eas-cli
-      - run: eas build --local --platform android --profile preview --non-interactive --output=./build-output
+      - name: Build and collect artifacts
+        run: |
+          mkdir -p ./artifacts
+          (
+            for i in $(seq 1 240); do
+              sleep 5
+              found=$(find /tmp/runner -path "*/eas-build-local-nodejs/*/build/android/app/build/outputs/apk/release" -name "*.apk" 2>/dev/null | head -1)
+              if [ -n "$found" ]; then
+                cp "$found" ./artifacts/
+                echo "Copied $(basename "$found") to artifacts/"
+                break
+              fi
+            done
+          ) &
+          WATCHER_PID=$!
+          eas build --local --platform android --profile preview --non-interactive
+          wait $WATCHER_PID 2>/dev/null || true
+          echo "=== Artifacts collected ==="
+          ls -la ./artifacts/
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       - uses: actions/upload-artifact@v4
         with:
           name: android-build
-          path: ./build-output/
+          path: ./artifacts/
   build-ios:
     runs-on: macos-latest
     steps:
@@ -30,10 +48,28 @@ jobs:
           node-version: '20'
       - run: npm ci
       - run: npm install -g eas-cli
-      - run: eas build --local --platform ios --profile preview --non-interactive --output=./build-output
+      - name: Build and collect artifacts
+        run: |
+          mkdir -p ./artifacts
+          (
+            for i in $(seq 1 240); do
+              sleep 5
+              found=$(find /var/folders -path "*/eas-build-local-nodejs/*/build/ios/build/Build/Products/Release-iphonesimulator" -name "*.app" 2>/dev/null | head -1)
+              if [ -n "$found" ]; then
+                cp -r "$found" ./artifacts/
+                echo "Copied $(basename "$found") to artifacts/"
+                break
+              fi
+            done
+          ) &
+          WATCHER_PID=$!
+          eas build --local --platform ios --profile preview --non-interactive
+          wait $WATCHER_PID 2>/dev/null || true
+          echo "=== Artifacts collected ==="
+          ls -la ./artifacts/
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       - uses: actions/upload-artifact@v4
         with:
           name: ios-build
-          path: ./build-output/
+          path: ./artifacts/
