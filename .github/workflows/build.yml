@@ -5,7 +5,7 @@ on:
       - main
   workflow_dispatch:
 jobs:
-  build-android:
+  build-android-apk:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,16 +23,9 @@ jobs:
         with:
           name: android-apk
           path: app.apk
-      - name: Build Android AAB
-        run: eas build --local --platform android --profile production --non-interactive --output=app.aab
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: android-aab
-          path: app.aab
-  build-ios:
-    runs-on: macos-latest
+
+  build-android-aab:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,11 +33,41 @@ jobs:
           node-version: '20'
       - run: npm ci
       - run: npm install -g eas-cli
-      - name: Build iOS IPA
-        run: eas build --local --platform ios --profile preview --non-interactive --output=app.ipa
+      - name: Build Android AAB
+        run: eas build --local --platform android --profile production --non-interactive --output=app.aab
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       - run: ls -lah
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: app.aab
+
+  build-ios:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm install -g eas-cli
+      - name: Build iOS (cloud)
+        run: |
+          eas build --platform ios --profile preview --non-interactive --wait --json > build-result.json
+          cat build-result.json
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      - name: Download iOS IPA
+        run: |
+          URL=$(node -p "JSON.parse(require('fs').readFileSync('build-result.json','utf8')).artifacts?.buildUrl || ''")
+          if [ -n "$URL" ] && [ "$URL" != "undefined" ]; then
+            curl -L -o app.ipa "$URL"
+            ls -lah app.ipa
+          else
+            echo "ERROR: No build URL in result"
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: ios-ipa
