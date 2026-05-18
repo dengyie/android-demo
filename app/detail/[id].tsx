@@ -1,7 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, Platform } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, Image, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
-import { FEATURES } from '@/data/features';
+import { FEATURES, FeatureIds } from '@/data/features';
+
+interface ExtendedPlatformConstants {
+  systemName?: string;
+  interfaceIdiom?: string;
+}
 
 function formatTime(date: Date): string {
   const y = date.getFullYear();
@@ -18,15 +23,38 @@ export default function DetailScreen() {
   const feature = FEATURES.find((f) => f.id === id);
 
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const imageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (id !== '2') return;
+    if (id !== FeatureIds.CLOCK) return;
     setCurrentTime(new Date());
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
     return () => clearInterval(timer);
+  }, [id]);
+
+  useEffect(() => {
+    if (id !== FeatureIds.IMAGE) return;
+
+    setImageLoading(true);
+    setImageError(false);
+
+    const timeout = setTimeout(() => {
+      setImageLoading(false);
+      setImageError(true);
+    }, 15000);
+
+    imageTimeoutRef.current = timeout;
+
+    return () => {
+      if (imageTimeoutRef.current) {
+        clearTimeout(imageTimeoutRef.current);
+        imageTimeoutRef.current = null;
+      }
+    };
   }, [id]);
 
   if (!feature) {
@@ -39,21 +67,41 @@ export default function DetailScreen() {
 
   const renderContent = () => {
     switch (id) {
-      case '1':
+      case FeatureIds.IMAGE:
         if (imageError) {
           return <Text style={styles.errorText}>图片加载失败</Text>;
         }
         return (
-          <Image
-            source={{ uri: 'https://picsum.photos/600/400' }}
-            style={styles.image}
-            resizeMode="contain"
-            onError={() => setImageError(true)}
-          />
+          <View style={styles.imageWrapper}>
+            {imageLoading && (
+              <ActivityIndicator size="large" color="#888888" style={styles.loader} />
+            )}
+            <Image
+              source={{ uri: 'https://picsum.photos/600/400' }}
+              style={styles.image}
+              resizeMode="contain"
+              onLoad={() => {
+                setImageLoading(false);
+                if (imageTimeoutRef.current) {
+                  clearTimeout(imageTimeoutRef.current);
+                  imageTimeoutRef.current = null;
+                }
+              }}
+              onError={() => {
+                setImageLoading(false);
+                setImageError(true);
+                if (imageTimeoutRef.current) {
+                  clearTimeout(imageTimeoutRef.current);
+                  imageTimeoutRef.current = null;
+                }
+              }}
+            />
+          </View>
         );
-      case '2':
+      case FeatureIds.CLOCK:
         return <Text style={styles.timeText}>{formatTime(currentTime)}</Text>;
-      case '3':
+      case FeatureIds.PLATFORM: {
+        const constants = Platform.constants as ExtendedPlatformConstants;
         return (
           <View style={styles.infoContainer}>
             <Text style={styles.infoLabel}>操作系统</Text>
@@ -61,11 +109,12 @@ export default function DetailScreen() {
             <Text style={styles.infoLabel}>系统版本</Text>
             <Text style={styles.infoValue}>{Platform.Version}</Text>
             <Text style={styles.infoLabel}>系统名称</Text>
-            <Text style={styles.infoValue}>{(Platform.constants as any).systemName ?? 'N/A'}</Text>
+            <Text style={styles.infoValue}>{constants.systemName ?? 'N/A'}</Text>
             <Text style={styles.infoLabel}>界面类型</Text>
-            <Text style={styles.infoValue}>{(Platform.constants as any).interfaceIdiom ?? 'N/A'}</Text>
+            <Text style={styles.infoValue}>{constants.interfaceIdiom ?? 'N/A'}</Text>
           </View>
         );
+      }
       default:
         return <Text style={styles.errorText}>未知功能</Text>;
     }
@@ -87,10 +136,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     padding: 20,
   },
+  imageWrapper: {
+    width: 300,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   image: {
     width: 300,
     height: 200,
     borderRadius: 12,
+  },
+  loader: {
+    position: 'absolute',
   },
   timeText: {
     fontSize: 28,

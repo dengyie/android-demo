@@ -32,10 +32,6 @@
       "expo-router"
     ],
     "scheme": "android-demo",
-    "platforms": [
-      "ios",
-      "android"
-    ],
     "extra": {
       "router": {},
       "eas": {
