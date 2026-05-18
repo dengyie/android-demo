@@ -14,7 +14,6 @@ export default function HomeScreen() {
       contentContainerStyle={styles.container}
       renderItem={({ item }) => (
         <FeatureCard
-          id={item.id}
           title={item.title}
           description={item.description}
           onPress={() => router.push(`/detail/${item.id}`)}
