@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, Text, StyleSheet } from 'react-native';
 import type { Feature } from '@/data/features';
 
-type FeatureCardProps = Omit<Feature, 'id'> & {
+type FeatureCardProps = Feature & {
   onPress: () => void;
 };
 
