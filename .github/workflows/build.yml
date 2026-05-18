@@ -14,18 +14,23 @@ jobs:
           node-version: '20'
       - run: npm ci
       - run: npm install -g eas-cli
-      - run: eas build --local --platform android --profile preview --non-interactive --output=./build-output
+      - name: Build Android APK
+        run: eas build --local --platform android --profile preview --non-interactive --output=app.apk
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      - run: |
-          mkdir -p ./artifacts
-          find /tmp/runner -name "*.apk" -exec cp {} ./artifacts/ \; 2>/dev/null || true
-          find ./build-output -name "*.apk" -exec cp {} ./artifacts/ \; 2>/dev/null || true
-          ls -la ./artifacts/
+      - run: ls -lah
       - uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: ./artifacts/*.apk
+          path: app.apk
+      - name: Build Android AAB
+        run: eas build --local --platform android --profile production --non-interactive --output=app.aab
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: app.aab
   build-ios:
     runs-on: macos-latest
     steps:
@@ -35,15 +40,12 @@ jobs:
           node-version: '20'
       - run: npm ci
       - run: npm install -g eas-cli
-      - run: eas build --local --platform ios --profile preview --non-interactive --output=./build-output
+      - name: Build iOS IPA
+        run: eas build --local --platform ios --profile preview --non-interactive --output=app.ipa
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      - run: |
-          mkdir -p ./artifacts
-          find /var/folders -name "*.app" -exec cp -r {} ./artifacts/ \; 2>/dev/null || true
-          find ./build-output -name "*.app" -exec cp -r {} ./artifacts/ \; 2>/dev/null || true
-          ls -la ./artifacts/
+      - run: ls -lah
       - uses: actions/upload-artifact@v4
         with:
-          name: ios-app
-          path: ./artifacts/*.app
+          name: ios-ipa
+          path: app.ipa
