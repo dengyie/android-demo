@@ -17,8 +17,6 @@ jobs:
       - run: npm install -g eas-cli
       - name: Build Android APK
         run: eas build --local --platform android --profile preview --non-interactive --output=app.apk
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       - run: ls -lah
       - uses: actions/upload-artifact@v4
         with:
@@ -37,8 +35,6 @@ jobs:
       - run: npm install -g eas-cli
       - name: Build Android AAB
         run: eas build --local --platform android --profile production --non-interactive --output=app.aab
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       - run: ls -lah
       - uses: actions/upload-artifact@v4
         with:
@@ -58,10 +54,48 @@ jobs:
       - run: npm install -g eas-cli
       - name: Build iOS Simulator
         run: eas build --local --platform ios --profile preview --non-interactive --output=app.tar.gz
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       - run: ls -lah
       - uses: actions/upload-artifact@v4
         with:
           name: ios-simulator-build
           path: app.tar.gz
+
+  upload-appetize:
+    needs: build-android-apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+      - name: Upload to Appetize
+        id: upload
+        run: |
+          RESPONSE=$(curl --fail-with-body -s \
+            --connect-timeout 30 \
+            --max-time 120 \
+            -F "file=@app.apk" \
+            -F "platform=android" \
+            "https://${{ secrets.APPETIZE_API_TOKEN }}@api.appetize.io/v1/apps")
+
+          PUBLIC_KEY=$(echo "$RESPONSE" | jq -r '.publicKey')
+
+          if [ -z "$PUBLIC_KEY" ] || [ "$PUBLIC_KEY" = "null" ]; then
+            echo "::warning::Failed to parse publicKey from Appetize response"
+            echo "Response: $RESPONSE"
+            exit 1
+          fi
+
+          echo "public_key=$PUBLIC_KEY" >> $GITHUB_OUTPUT
+
+          APP_URL="https://appetize.io/app/$PUBLIC_KEY"
+          echo "app_url=$APP_URL" >> $GITHUB_OUTPUT
+
+          {
+            echo "### :iphone: Appetize Preview"
+            echo ""
+            echo "[Open in Appetize]($APP_URL)"
+            echo ""
+            echo "Public Key: `$PUBLIC_KEY`"
+          } >> $GITHUB_STEP_SUMMARY
