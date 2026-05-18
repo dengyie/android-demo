@@ -17,20 +17,7 @@ jobs:
       - name: Build and collect artifacts
         run: |
           mkdir -p ./artifacts
-          (
-            for i in $(seq 1 240); do
-              sleep 5
-              found=$(find /tmp/runner -path "*/eas-build-local-nodejs/*/build/android/app/build/outputs/apk/release/*.apk" 2>/dev/null | head -1)
-              if [ -n "$found" ]; then
-                cp "$found" ./artifacts/
-                echo "Copied $(basename "$found") to artifacts/"
-                break
-              fi
-            done
-          ) &
-          WATCHER_PID=$!
-          eas build --local --platform android --profile preview --non-interactive
-          wait $WATCHER_PID 2>/dev/null || true
+          eas build --local --platform android --profile preview --non-interactive --output ./artifacts/app-release.apk
           echo "=== Artifacts collected ==="
           ls -la ./artifacts/
         env:
@@ -51,20 +38,7 @@ jobs:
       - name: Build and collect artifacts
         run: |
           mkdir -p ./artifacts
-          (
-            for i in $(seq 1 240); do
-              sleep 5
-              found=$(find /var/folders -path "*/eas-build-local-nodejs/*/build/ios/build/Build/Products/Release-iphonesimulator/*.app" 2>/dev/null | head -1)
-              if [ -n "$found" ]; then
-                cp -r "$found" ./artifacts/
-                echo "Copied $(basename "$found") to artifacts/"
-                break
-              fi
-            done
-          ) &
-          WATCHER_PID=$!
-          eas build --local --platform ios --profile preview --non-interactive
-          wait $WATCHER_PID 2>/dev/null || true
+          eas build --local --platform ios --profile preview --non-interactive --output ./artifacts/ios-build.tar.gz
           echo "=== Artifacts collected ==="
           ls -la ./artifacts/
         env:
