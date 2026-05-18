@@ -51,14 +51,14 @@ type FeatureCardProps = Feature & {
  * 函数组件（Function Component）是 React 的主流写法，
  * 比 Class Component 更简洁。
  *
- * 参数解构 { title, description, onPress }：
- *   从 props 对象中提取需要的属性，
- *   id 虽然包含在 Feature 里但不在此组件中使用。
+ * 参数解构 { title, description, onPress, id }：
+ *   从 props 对象中提取需要的属性。
+ *   id 解构但未使用，仅用于满足类型约束。
  *
  * export default 表示这是该文件的默认导出，
  * 导入时可以用任意名字：import Card from '@/components/feature-card'
  */
-export default function FeatureCard({ title, description, onPress }: FeatureCardProps) {
+export default function FeatureCard({ title, description, onPress, id }: FeatureCardProps) {
   return (
     /**
      * Pressable —— 可检测按压状态的容器
